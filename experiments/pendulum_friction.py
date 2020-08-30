@@ -1,9 +1,8 @@
 import numpy as np
 import tensorflow as tf
-import tensorflow.keras as tfk
 from environments import Pendulum
 from models import CDLNetwork_Simple, ResNet, VIN_VV
-from utils import TRAIN
+from utils import TRAIN, PREDICT
 import matplotlib.pyplot as plt
 
 env = None
@@ -19,18 +18,18 @@ def run(train_vin=False):
     env.generate()
 
     # CD-LAGRANGE
-    cdl_model = TRAIN(env, CDLNetwork_Simple, name='CDL')
+    cdl_model = TRAIN(env, CDLNetwork_Simple, name='CDL', learn_friction=True)
 
     # RESNET
     resnet = TRAIN(env, ResNet, name='ResNet')
 
-    cdl_data = cdl_model.forward(tf.convert_to_tensor([[env.trajectory[0]]], np.float32), env.dt, env.trajectory.shape[0])[0]
-    resnet_data = resnet.forward(tf.convert_to_tensor([[env.trajectory[0]]], np.float32), env.dt, env.trajectory.shape[0])[0]
+    cdl_data = PREDICT(env, cdl_model)
+    resnet_data = PREDICT(env, resnet)
 
     if _train_vin:
         # VIN
         vin_model = TRAIN(env, VIN_VV, name='VIN_VV')
-        vin_data = vin_model.forward(tf.convert_to_tensor([[env.trajectory[0]]], np.float32), env.dt, env.trajectory.shape[0])[0]
+        vin_data = PREDICT(env, vin_model)
 
 
 def plot_trajectory(savefig=False):
