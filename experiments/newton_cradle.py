@@ -65,8 +65,10 @@ def plot_potential(savefig=False):
     plt.plot(t, pt[:, 0], 'b', label='CD-Lagrange, Right')
     plt.plot(t, pt[:, 1], 'r', label='CD-Lagrange, Left')
 
-    plt.plot(t, env.g * np.sin(cdl_data[:, 0]), 'b--', label='Ground truth, Right')
-    plt.plot(t, env.g * np.sin(cdl_data[:, 1]), 'r--', label='Ground truth, Left')
+    # plt.plot(t, env.g * np.sin(cdl_data[:, 0]), 'b--', label='Ground truth, Right')
+    # plt.plot(t, env.g * np.sin(cdl_data[:, 1]), 'r--', label='Ground truth, Left')
+    plt.plot(t[:-1], env.g * np.sin(env.trajectory[:, 0]), 'b--', label='Ground truth, Right')
+    plt.plot(t[:-1], env.g * np.sin(env.trajectory[:, 1]), 'r--', label='Ground truth, Left')
     plt.legend()
     plt.xlabel('Time in s')
     plt.subplot(1, 2, 2)
@@ -80,4 +82,14 @@ def plot_potential(savefig=False):
     plt.xlabel('Time in s')
     if savefig:
         plt.savefig(env.get_filename('potential'))
+    plt.show()
+
+def plot_loss(savefig=False):
+    plt.figure(figsize=(10,8))
+    plt.semilogy(cdl_model.loss_data[:, 1], label="CD-Lagrange")
+    plt.semilogy(resnet.loss_data[:, 1], label="ResNet")
+    plt.xlabel('Epochs'); plt.ylabel('MSE loss')
+    plt.legend()
+    if savefig:
+        plt.savefig(env.get_filename('loss'))
     plt.show()

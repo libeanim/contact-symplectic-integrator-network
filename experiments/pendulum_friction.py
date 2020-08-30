@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 from environments import Pendulum
 from models import CDLNetwork_Simple, ResNet, VIN_VV
-from utils import TRAIN, PREDICT
+from utils import TRAIN, PREDICT, RMSE
 import matplotlib.pyplot as plt
 
 env = None
@@ -38,28 +38,23 @@ def plot_trajectory(savefig=False):
     plt.title('Phase Space'); plt.xlabel('q'); plt.ylabel('p')
     plt.plot(env.trajectory[:, 0], env.trajectory[:, 1], '--k', label='Ground truth')
     plt.plot(env.X[:, 0], env.X[:, 1], 'xk', label='Training data', alpha=0.3)
-    plt.plot(cdl_data[:, 0], cdl_data[:, 1], '-',  label='CD-Lagrange')
-    plt.plot(resnet_data[:, 0], resnet_data[:, 1], '-', label='ResNet')
+    plt.plot(cdl_data[:, 0], cdl_data[:, 1], '-',  label='CD-Lagrange, RMSE: {:.3f}'.format(RMSE(env, cdl_data)))
+    plt.plot(resnet_data[:, 0], resnet_data[:, 1], '-', label='ResNet, RMSE: {:.3f}'.format(RMSE(env, resnet_data)))
     if _train_vin:
-        plt.plot(vin_data[:, 0], vin_data[:, 1], '-', label='VIN VV')
+        plt.plot(vin_data[:, 0], vin_data[:, 1], '-', label='VIN VV, RMSE: {:.3f}'.format(RMSE(env, vin_data)))
     plt.legend()
     if savefig:
-        plt.savefig(env.get_filename('trajectory.png'))
+        plt.savefig(env.get_filename('trajectory'))
     plt.show()
 
 def plot_energy(savefig=False):
     ## Energy
-    e_exact = env.trajectory[:, 1]**2/2 + env.g * env.trajectory[:, 0]
-    e_cdl = env.g * cdl_data[:, 0] + cdl_data[:, 1]**2/2
-    e_resnet = env.g * resnet_data[:, 0] + resnet_data[:, 1]**2/2
-    ### Scaling
-    e_cdl /= np.max(e_exact)
-    e_resnet /= np.max(e_exact)
+    e_exact = env.energy()
+    e_cdl = env.energy(cdl_data)
+    e_resnet = env.energy(resnet_data)
     if _train_vin:
-        e_vv = env.g*vin_data[:, 0] + vin_data[:, 1]**2/2
-        e_vv /= np.max(e_exact)
+        e_vv = env.energy(vin_data)
         e_vv = e_vv[:-1]
-    e_exact /= np.max(e_exact)
     e_cdl, e_resnet = e_cdl[:-1], e_resnet[:-1]
 
 
@@ -80,7 +75,7 @@ def plot_energy(savefig=False):
     if _train_vin:
         plt.plot(e_vv - e_exact, label='VIN VV')
     if savefig:
-        plt.savefig(env.get_filename('energy.png'))
+        plt.savefig(env.get_filename('energy'))
     plt.show()
 
 
@@ -91,7 +86,8 @@ def plot_potential(savefig=False):
     plt.subplot(1, 2, 1)
     plt.title('Gradient of Potential')
     plt.plot(t, cdl_model.grad_potential(tf.reshape(cdl_data[:, 0], (cdl_data.shape[0], 1)))[:, 0], label='CD-Lagrange')
-    plt.plot(t, env.g * np.sin(cdl_data[:, 0]), '--k', label='Ground truth')
+    # plt.plot(t, env.g * np.sin(cdl_data[:, 0]), '--k', label='Ground truth')
+    plt.plot(t[:-1], env.g * np.sin(env.trajectory[:, 0]), '--k', label='Ground truth')
     if _train_vin:
         plt.plot(t, -vin_model.grad_potential(tf.reshape(vin_data[:, 0], (vin_data.shape[0], 1)))[:, 0], 'C2', label='VIN VV')
     plt.xlabel('Time in s')
@@ -105,4 +101,16 @@ def plot_potential(savefig=False):
     plt.legend()
     if savefig:
         plt.savefig(env.get_filename('potential'))
+    plt.show()
+
+def plot_loss(savefig=False):
+    plt.figure(figsize=(10,8))
+    plt.semilogy(cdl_model.loss_data[:, 1], label="CD-Lagrange")
+    plt.semilogy(resnet.loss_data[:, 1], label="ResNet")
+    if _train_vin:
+        plt.semilogy(vin_model.loss_data[:, 1], label="VIN VV")
+    plt.xlabel('Epochs'); plt.ylabel('MSE loss')
+    plt.legend()
+    if savefig:
+        plt.savefig(env.get_filename('loss'))
     plt.show()
