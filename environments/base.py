@@ -22,7 +22,7 @@ class Environment:
         self.CONTACT = CONTACT
         self.trajectory = None
 
-    def get_filename(self, name, suffix='png', folder='images'):
+    def get_filename(self, name, suffix='pdf', folder='images'):
         if folder is None:
             folder = '.'
         return '{}/{}-{}-{}-{}-{}.{}'.format(folder, self.SEED, self.DATA, self.CONTACT, self.epochs, name, suffix)
