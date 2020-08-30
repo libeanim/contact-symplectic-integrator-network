@@ -8,7 +8,7 @@ and its ability to generalise.
 
 import numpy as np
 import matplotlib.pyplot as plt
-from utils import PREDICT
+from utils.training import PREDICT
 
 def RMSE(env, pred):
     """
@@ -19,7 +19,27 @@ def RMSE(env, pred):
         env:  Envrionment
         pred: Predicted data
     """
-    return np.sqrt(np.sum(pred[:-1] - env.trajectory)**2 / env.trajectory.shape[0])
+    return np.sqrt(np.sum((pred[:-1] - env.trajectory)**2) / env.trajectory.shape[0])
+
+def RMSE_from_experiment(exp):
+    """
+    Calculate the root-mean-squared-error for a given experiment
+    
+    Parameters
+    ----------
+        exp:  Experiment
+    
+    Return
+    ------
+    Returns a tuple of the root mean squared error for
+        [0]: CD-Lagrange
+        [1]: Residual network
+        [[2]: VIN]
+    """
+    if hasattr(exp, 'vin_data'):
+        return RMSE(exp.env, exp.cdl_data), RMSE(exp.env, exp.resnet_data), RMSE(exp.env, exp.vin_data)
+    else:
+        return RMSE(exp.env, exp.cdl_data), RMSE(exp.env, exp.resnet_data)
 
 def calculate_RMSE(exp, state0s, enable_vin=False):
     """

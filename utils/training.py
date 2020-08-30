@@ -15,7 +15,10 @@ def TRAIN(env, model, name, learning_rate=1e-3, loss='mse', initialise=True, lea
                         If False model will not be reinitialised so that training can continue.
     """
     if initialise:
-        m = model(env.dt, env.horizon, name=name, dim_state=env.X.shape[1],
+        e = 1.0
+        if hasattr(env, 'e'):
+            e = env.e
+        m = model(env.dt, env.horizon, name=name, dim_state=env.X.shape[1], e=e,
                   learn_inertia=False, learn_friction=learn_friction, activation='tanh')
         optimizer = tf.keras.optimizers.Adam(learning_rate)
         m.compile(optimizer, loss=loss, run_eagerly=False)
