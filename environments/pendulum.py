@@ -46,6 +46,13 @@ class Pendulum(Environment):
         self.mass = mass
         self.g = g
         self.length = length
+    
+    def energy(self, data=None):
+        if data is None:
+            data = self.trajectory
+        T = 0.5 * self.mass * self.length**2 * data[:, 1]**2
+        V = -self.g * self.length * self.mass * (1 - np.cos(data[:, 0]))
+        return T + V
 
     def generate(self, model=MODEL[0], state0=[1, 0]):
         if model == self.MODEL[0]:

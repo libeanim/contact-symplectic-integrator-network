@@ -51,6 +51,13 @@ class BouncingBall(Environment):
         plt.ylabel('height')
         plt.show()
 
+    def energy(self, data=None):
+        if data is None:
+            data = self.trajectory
+        T = 0.5 * self.mass * data[:, 1]**2
+        V = self.g * self.mass * data[:, 0]
+        return T + V
+
     def generate(self):
         """Generate data based on parameters set in init function"""
         space = pymunk.Space()
