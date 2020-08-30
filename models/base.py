@@ -1,22 +1,15 @@
-import tensorflow.keras as tfk
 import tensorflow as tf
 
-class BaseNetwork(tfk.Model):
+class BaseNetwork(tf.keras.Model):
 
-    def __init__(self, step_size, horizon, name, **kwargs):
+    def __init__(self, step_size, horizon, name, dim_state):
 
         super().__init__(name=name)
 
         self.step_size = step_size
         self.horizon = horizon
+        self.dim_state = dim_state
 
-        for key in kwargs:
-            setattr(self, key, kwargs[key])
-
-        self._build_network(**kwargs)
-
-        inputs = tfk.Input(shape=(None, self.dim_state), dtype=tfk.backend.floatx())
-        outputs = self.call(inputs)
 
     def call(self, x0):
         return self.forward(x0, self.step_size, self.horizon)[:, 1:]

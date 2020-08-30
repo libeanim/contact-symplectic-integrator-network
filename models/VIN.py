@@ -21,7 +21,8 @@ from models.base import BaseNetwork
 class VIN(BaseNetwork):
     """ Variational Integrator Network """
 
-    def _build_network(self, dim_state=10, dim_h=500, activation='relu', learn_inertia=False, **kwargs):
+    def __init__(self, step_size, horizon, name, dim_state=10, dim_h=500, activation='relu', learn_inertia=False, **kwargs):
+        super().__init__(step_size, horizon, name, dim_state)
 
         self.dim_Q = self.dim_state // 2
 

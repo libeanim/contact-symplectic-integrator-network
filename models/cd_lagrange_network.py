@@ -19,9 +19,9 @@ from models.base import BaseNetwork
 class CDLNetwork(BaseNetwork):
 
   
-    def _build_network(self, dim_state=10, dim_h=500, activation='relu', learn_inertia=False, learn_friction=False, **kwargs):
+    def __init__(self, step_size, horizon, name, dim_state=10, dim_h=500, activation='relu', learn_inertia=False, learn_friction=False, **kwargs):
+        super().__init__(step_size, horizon, name, dim_state)
 
-        self.dim_state = dim_state
         self.dim_Q = self.dim_state // 2
         
         self.potential = tfk.Sequential([
@@ -58,7 +58,7 @@ class CDLNetwork(BaseNetwork):
         if self.learn_friction:
             B = tfp.math.fill_triangular(self.B_param)
         else:
-            B = tf.linalg.diag(tf.ones((self.dim_Q,), dtype=tfk.backend.floatx()))
+            B = tf.linalg.diag(tf.zeros((self.dim_Q,), dtype=tfk.backend.floatx()))
         return B
     
     @property
@@ -104,9 +104,8 @@ class CDLNetwork(BaseNetwork):
 
 class CDLNetwork_Simple(CDLNetwork):
     
-    def _build_network(self, dim_state=10, dim_h=500, activation='relu', learn_inertia=False, learn_friction=False, **kwargs):
-
-        super()._build_network(dim_state, dim_h, activation, learn_inertia, **kwargs)
+    def __init__(self, step_size, horizon, name, dim_state=10, dim_h=500, activation='relu', learn_inertia=False, learn_friction=False, **kwargs):
+        super().__init__(step_size, horizon, name, dim_state, dim_h, activation, learn_inertia, learn_friction)
         
         self.contact = tfk.Sequential([
             tfk.layers.Dense(dim_h, activation='relu'),

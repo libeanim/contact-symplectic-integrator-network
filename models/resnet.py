@@ -4,7 +4,8 @@ from models.base import BaseNetwork
 class ResNet(BaseNetwork):
     """ Residual Network """
 
-    def _build_network(self, dim_state=10, dim_h=500, activation='relu', **kwargs):
+    def __init__(self, step_size, horizon, name, dim_state, dim_h=500, activation='relu', **kwargs):
+        super().__init__(step_size, horizon, name, dim_state)
 
         self.network = tfk.Sequential([
             tfk.layers.Dense(dim_h, activation=activation),
