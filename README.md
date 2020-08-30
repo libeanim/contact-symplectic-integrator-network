@@ -15,6 +15,11 @@ This projects has four different modules
 
 ## Usage
 
+Install the python requirements with
+```
+pip install -r requirements.txt
+```
+
 ### Simulate experiments from the thesis
 In order to rerun the experiments in the thesis one can just execute the `main.py` file which will sequentially execute all experiments.
 It is possible to access the models trained in every experiment by using dot-access:
