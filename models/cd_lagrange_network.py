@@ -104,7 +104,8 @@ class CDLNetwork(BaseNetwork):
 
 class CDLNetwork_Simple(CDLNetwork):
     
-    def __init__(self, step_size, horizon, name, dim_state=10, dim_h=500, activation='relu', learn_inertia=False, learn_friction=False, **kwargs):
+    def __init__(self, step_size, horizon, name, dim_state=10, dim_h=500, activation='relu', learn_inertia=False,
+                 learn_friction=False, e=1., **kwargs):
         super().__init__(step_size, horizon, name, dim_state, dim_h, activation, learn_inertia, learn_friction)
         
         self.contact = tfk.Sequential([
@@ -113,4 +114,4 @@ class CDLNetwork_Simple(CDLNetwork):
         ])
         
         self.L = tf.constant([[1.]])
-        self.e = tf.constant([[1.]])
+        self.e = e * tf.eye(self.dim_Q)
