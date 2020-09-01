@@ -115,3 +115,14 @@ class CDLNetwork_Simple(CDLNetwork):
         
         self.L = tf.constant([[1.]])
         self.e = e * tf.eye(self.dim_Q)
+
+class CDLNetwork_NoContact(CDLNetwork_Simple):
+    
+    def __init__(self, step_size, horizon, name, dim_state=10, dim_h=500, activation='relu', learn_inertia=False,
+                 learn_friction=False, e=1., **kwargs):
+        super().__init__(step_size, horizon, name, dim_state, dim_h, activation, learn_inertia,
+                         learn_friction, e)
+        
+        self.contact = lambda a: tf.zeros_like(a)
+
+        

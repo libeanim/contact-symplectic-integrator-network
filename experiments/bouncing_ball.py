@@ -9,7 +9,7 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 from environments import BouncingBall
-from models import CDLNetwork_Simple, ResNet
+from models import CDLNetwork_Simple, ResNet, CDLNetwork_NoContact
 from utils import TRAIN, PREDICT, RMSE
 
 env = None
@@ -41,6 +41,21 @@ def run_zenos_paradox():
 
     # CD-LAGRANGE
     cdl_model = TRAIN(env, CDLNetwork_Simple, name='CDL')
+
+    # RESNET
+    resnet = TRAIN(env, ResNet, name='ResNet')
+
+    cdl_data = PREDICT(env, cdl_model)
+    resnet_data = PREDICT(env, resnet)
+
+def run_contact_disabled():
+    global env, cdl_model, resnet, cdl_data, resnet_data
+
+    env = BouncingBall(steps=500, dt=0.02, epochs=3000, e=1., CONTACT='none')
+    env.generate()
+
+    # CD-LAGRANGE
+    cdl_model = TRAIN(env, CDLNetwork_NoContact, name='CDL')
 
     # RESNET
     resnet = TRAIN(env, ResNet, name='ResNet')
