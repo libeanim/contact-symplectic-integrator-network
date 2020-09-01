@@ -69,12 +69,15 @@ def get_random_start_states(multiplier=1, dim_state=2, length=10, SEED=0):
     np.random.seed(SEED)
     return np.random.rand(length, dim_state) * multiplier
 
-def plot_RMSE(rmses):
+def plot_RMSE(rmses, fig_name=None):
     """Plot the root-mean-squared-error over multiple start states"""
-    plt.semilogy(rmses[:, 0], label='CDL')
+    plt.figure(figsize=(10,8))
+    plt.semilogy(rmses[:, 0], label='CD-Lagrange')
     plt.semilogy(rmses[:, 1], label='ResNet')
-    if rmses.shape[1] == 2:
-        plt.semilogy(rmses[:, 2], label='VIN')
+    if rmses.shape[1] > 2:
+        plt.semilogy(rmses[:, 2], label='VIN VV')
+    plt.xlabel('Sample id'); plt.ylabel('RMSE')
     plt.legend()
+    if fig_name is not None:
+        plt.savefig(fig_name)
     plt.show()
-    return rmses
