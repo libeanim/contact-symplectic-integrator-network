@@ -2,7 +2,7 @@
 Pendulum Experiment
 --------------------
 
-This is the setup used as shown in the thesis
+This is the setup used in the thesis
 """
 
 import numpy as np

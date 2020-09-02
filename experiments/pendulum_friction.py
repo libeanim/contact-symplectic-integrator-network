@@ -1,3 +1,9 @@
+"""
+Pendulum with Friction Experiment
+---------------------------------
+
+This is the setup used in the thesis
+"""
 import numpy as np
 import tensorflow as tf
 from environments import Pendulum
