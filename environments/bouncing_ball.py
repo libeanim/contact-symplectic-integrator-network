@@ -6,6 +6,10 @@ from environments.base import Environment
 class BouncingBall(Environment):
     """
     Bouncing Ball Environment
+    =========================
+
+    It uses the pymunk backend to generate data based on
+    a Runge-Kutta method.
 
     Parameters:
     -----------

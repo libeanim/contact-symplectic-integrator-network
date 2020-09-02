@@ -10,6 +10,13 @@ from IPython.display import HTML
 class NewtonCradle(Environment):
     """
     Newton Cradle Environment
+    =========================
+
+    It supports two generator backends:
+    - CD-Lagrange (cdl)
+        Generates data based on the CD-Lagrange integration scheme
+    - Pymunk (pymunk)
+        Generates data using a Runge-Kutte method.
 
     Parameters:
     -----------
@@ -34,7 +41,7 @@ class NewtonCradle(Environment):
                     random seed
     """
 
-    MODEL = ('pymunk', 'cdl')
+    MODEL = ('cdl', 'pymunk')
 
     def __init__(
             self, steps=500, dt=0.01, epochs=3000, CONTACT='nomax', mass=1., g=-9.81,
@@ -50,7 +57,7 @@ class NewtonCradle(Environment):
         
         Parameters
         ----------
-            model:  Backend that should be used.
+            model:  Backend that should be used ('cdl', 'pymunk').
             state0: Initial state
         """
         if model == self.MODEL[0]:
@@ -64,6 +71,9 @@ class NewtonCradle(Environment):
 
 
     def get_state(self):
+        """
+        Returns the current state if the pymunk backend is used.
+        """
         q, qdot = [], []
         for body in self.space.bodies:
             x = body.position[0]
@@ -77,6 +87,9 @@ class NewtonCradle(Environment):
         return np.array([q, qdot]).flatten()
         
     def get_polar(self, offset=-90):
+        """
+        Returns the polar coordinates if the pymunk backend is used.
+        """
         q, qdot = [], []
         for i, body in enumerate(self.space.bodies):
         
@@ -95,6 +108,10 @@ class NewtonCradle(Environment):
         return np.array([q, qdot]).flatten()
 
     def convert_cartesian(self, state, r=100, offset=-90):
+        """
+        This function converts the generalised coordinates from a given state
+        into cartesian coordinates.
+        """
         dim_state = len(state)
         thetas = state[:dim_state//2]
         thetadots = state[dim_state//2:]
@@ -111,6 +128,10 @@ class NewtonCradle(Environment):
         return np.array([q, qdot]).flatten()
 
     def plot_c(self, state, convert=False):
+        """
+        Plots the position of the two balls for a given state.
+        (This is fur debugging purposes only)
+        """
         if convert:
             state = self.convert_cartesian(state)
         fig = plt.figure()
@@ -126,7 +147,7 @@ class NewtonCradle(Environment):
     def generate_pymunk(self, radius=100, elasticity=1., damping=1., g=-9.81,
             balls=[(-10, 0), (10, 0)], joints=[(-10, 1000), (10, 1000)], start_impuls=-20,
             coordinate_system='polar'):
-        """Generate data using the pymink backend"""
+        """Generate data using the pymunk backend"""
 
         # Space
         space = pymunk.Space()

@@ -6,6 +6,14 @@ from environments.base import Environment
 class Pendulum(Environment):
     """
     Pendulum Environment
+    ====================
+
+    It supports two generator backends:
+    - runge-kutta
+        Uses a conventional Runge-Kutta method to generate data
+    - analytical-small-angle
+        Uses the analytical small angle approximation to generate data
+    
 
     Parameters:
     -----------
