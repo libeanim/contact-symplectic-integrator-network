@@ -13,7 +13,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 from environments import NewtonCradle
 from models import CDLNetwork, ResNet
-from utils import TRAIN, PREDICT
+from utils import TRAIN, PREDICT, RMSE
 
 env = None
 cdl_model = None
@@ -36,6 +36,9 @@ def run():
 
 
 def plot_trajectory(savefig=False):
+    # bottom_right=(0.3, -2.1)
+    top_right=(0.25, 1.95)
+    
     plt.figure(figsize=(14, 10))
     plt.subplot(2,2,1); plt.title('Ground Truth')
     plt.plot(env.trajectory[:, 0], env.trajectory[:, 2], 'o--', label='1')
@@ -43,11 +46,15 @@ def plot_trajectory(savefig=False):
     plt.legend()
 
     plt.subplot(2,2,2); plt.title('CD-Lagrange')
+    rmse_cdl = RMSE(env, cdl_data)
+    plt.text(top_right[0], top_right[1], 'RMSE={:.3f}'.format(rmse_cdl))
     plt.plot(cdl_data[:, 0], cdl_data[:, 2], 'o--', label='1')
     plt.plot(cdl_data[:, 1], cdl_data[:, 3], 'o--', label='2')
     plt.legend()
 
     plt.subplot(2,2,3); plt.title('ResNet')
+    rmse_resnet = RMSE(env, resnet_data)
+    plt.text(top_right[0], top_right[1], 'RMSE={:.3f}'.format(rmse_resnet))
     plt.plot(resnet_data[:, 0], resnet_data[:, 2], 'o--', label='1')
     plt.plot(resnet_data[:, 1], resnet_data[:, 3], 'o--', label='2')
     plt.legend()
