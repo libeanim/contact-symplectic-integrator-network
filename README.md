@@ -11,7 +11,7 @@ This project has four different modules
     - Newton Cradle
 - `experiments`, which contains the concrete setups used in the dissertation. This includes the parameter configuration and the code for creating the plots used in this section.
 - `models` contains the implementation of integrator analyzed in this work (CD-Lagrange) as well as the models it is compared to (residual network, VIN).
-- `utils` contains the `TRAIN` function, which universally trains a network model given a specific environment, and the `PREDICT` function, which can be used to predict the trajectory of a given model and initial state $$q_0$$.
+- `utils` contains the `TRAIN` function, which universally trains a network model given a specific environment, and the `PREDICT` function, which can be used to predict the trajectory of a given model and environment.
 
 ## Usage
 
