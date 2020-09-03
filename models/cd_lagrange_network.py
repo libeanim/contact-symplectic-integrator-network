@@ -17,9 +17,30 @@ import tensorflow_probability as tfp
 from models.base import BaseNetwork
 
 class CDLNetwork(BaseNetwork):
+    """
+    CD-Lagrange Network
+    ===================
+
+    step_size:      `float`;
+                    The time step size "h" used for integration.
+    horizon:        `int`;
+                    The number of forward steps the network has to predict during training.
+    name:           `str`;
+                    Name of the network
+    dim_state:      `int`;
+                    Number of states the system has.
+    dim_h:          `int`;
+                    Number of units in the hidden layer.
+    activation:     `str`;
+                    Activation function used in the potential network.
+    learn_inertia:  `bool`;
+                    Determines whether to learn the mass matrix
+    learn_friction: `bool`;
+                    Determines whether to learn the friction paramter.
+    """
 
   
-    def __init__(self, step_size, horizon, name, dim_state=10, dim_h=500, activation='relu', learn_inertia=False, learn_friction=False, **kwargs):
+    def __init__(self, step_size, horizon, name, dim_state=10, dim_h=500, activation='tanh', learn_inertia=False, learn_friction=False, **kwargs):
         super().__init__(step_size, horizon, name, dim_state)
 
         self.dim_Q = self.dim_state // 2
@@ -55,6 +76,7 @@ class CDLNetwork(BaseNetwork):
 
     @property
     def B(self):
+        """Friction paramter"""
         if self.learn_friction:
             B = tfp.math.fill_triangular(self.B_param)
         else:
@@ -63,6 +85,7 @@ class CDLNetwork(BaseNetwork):
     
     @property
     def M_inv(self):
+        """Inverse of mass matrix"""
         if self.learn_inertia:
             L = tfp.math.fill_triangular(self.L_param)
             M_inv = tf.transpose(L) @ L
@@ -71,7 +94,7 @@ class CDLNetwork(BaseNetwork):
         return M_inv
 
     def grad_potential(self, q):
-
+        """Gradient of the potential"""
         with tf.GradientTape() as g:
             g.watch(q)
             U = self.potential(q)
@@ -79,6 +102,7 @@ class CDLNetwork(BaseNetwork):
         return g.gradient(U, q)
 
     def step(self, x, step_size, t):
+        """Calculate next step using the CD-Lagrange integrator."""
         u = x[:, :self.dim_Q]
         udot = x[:, self.dim_Q:]
 
