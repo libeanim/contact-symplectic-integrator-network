@@ -59,7 +59,6 @@ def plot_energy(savefig=False):
     e_exact = env.energy()
     e_cdl = env.energy(cdl_data)
     e_resnet = env.energy(resnet_data)
-    e_resnet /= np.max(e_exact)
     if _train_vin:
         e_vv = env.energy(vin_data)
         e_vv = e_vv[:-1]
