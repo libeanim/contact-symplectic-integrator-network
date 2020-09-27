@@ -20,7 +20,7 @@ resnet = None
 def run():
     global env, cdl_model, resnet, cdl_data, resnet_data
 
-    env = BouncingBall(steps=500, dt=0.02, epochs=3000, e=1.)
+    env = BouncingBall(steps=500, dt=0.02, epochs=3000, e=1., SIGMA=0.2)
     env.generate()
 
     # CD-LAGRANGE
@@ -31,6 +31,7 @@ def run():
 
     cdl_data = PREDICT(env, cdl_model)
     resnet_data = PREDICT(env, resnet)
+
 
 
 def run_zenos_paradox():

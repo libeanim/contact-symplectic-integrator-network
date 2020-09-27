@@ -8,6 +8,7 @@ try:
         os.mkdir('images')
 except:
     print('Unable to create image folder.')
+"""
 # %% Pendulum
 pendulum.run(train_vin=True)
 
@@ -21,15 +22,16 @@ pendulum_friction.run(train_vin=True)
 pendulum_friction.plot_trajectory(savefig=True)
 pendulum_friction.plot_energy(savefig=True)
 pendulum_friction.plot_potential(savefig=True)
-
+"""
 # %% Bouncing Ball
 bouncing_ball.run()
 
 bouncing_ball.plot_trajectory(savefig=True)
 bouncing_ball.plot_potential(savefig=True)
-
+"""
 # %% Newton Cradle
 newton_cradle.run()
 
 newton_cradle.plot_trajectory(savefig=True)
 newton_cradle.plot_potential(savefig=True)
+"""

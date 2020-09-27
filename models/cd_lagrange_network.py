@@ -10,7 +10,7 @@ This is the implementation of the CD-Lagrange network based on the work of
 - Steindor Saemundsson et al.
   “Variational Integrator Networks for Physically Meaning-ful Embeddings”
 """
-
+import numpy as np
 import tensorflow.keras as tfk
 import tensorflow as tf
 import tensorflow_probability as tfp
@@ -40,14 +40,14 @@ class CDLNetwork(BaseNetwork):
     """
 
   
-    def __init__(self, step_size, horizon, name, dim_state=10, dim_h=500, activation='tanh', learn_inertia=False, learn_friction=False, **kwargs):
-        super().__init__(step_size, horizon, name, dim_state)
+    def __init__(self, step_size, horizon, name, dim_state=10, dim_h=500, activation='tanh', learn_inertia=False, learn_friction=False, pos_only=True, **kwargs):
+        super().__init__(step_size, horizon, name, dim_state, pos_only=pos_only)
 
         self.dim_Q = self.dim_state // 2
         
         self.potential = tfk.Sequential([
-            tfk.layers.Dense(dim_h, activation=activation, input_shape=(dim_state//2,)),
-            tfk.layers.Dense(1, use_bias=False)
+            tfk.layers.Dense(dim_h, activation=activation, input_shape=(dim_state//2,), kernel_regularizer=tf.keras.regularizers.l2(0.05)),
+            tfk.layers.Dense(1, use_bias=False, kernel_regularizer=tf.keras.regularizers.l2(0.05))
         ])
            
         self.contact = tfk.Sequential([
@@ -101,7 +101,7 @@ class CDLNetwork(BaseNetwork):
 
         return g.gradient(U, q)
 
-    def step(self, x, step_size, t):
+    def step(self, x, c, step_size, t):
         """Calculate next step using the CD-Lagrange integrator."""
         u = x[:, :self.dim_Q]
         udot = x[:, self.dim_Q:]
@@ -113,24 +113,62 @@ class CDLNetwork(BaseNetwork):
         
         
         # Contact forces
-        Q = tf.concat([u_next, udot], 1)
+        #Q = tf.concat([u_next, udot], 1)
+        #Q = tf.stop_gradient(Q)
+        #w_c = tf.stop_gradient(w)
+        #udot_c = tf.stop_gradient(udot)
+        Q = tf.concat([u, udot], 1)
+
         v = -tf.einsum('jk,ik->ij', self.e, self.L * udot)
         r = v - self.L * (udot + w)
         ctf = self.contact(Q)
-        r = ctf * r   
+
+        if c is None:
+            c = np.float32(ctf.numpy() > 0.5)
+            c = tf.constant(c)
+
+        r = c * r 
+
         i = tf.einsum('jk,ik->ij', self.M_inv, self.L * r)
 
         # Velocity next step
         udot_next = udot + w + i
+        #udot_next = udot + (1.0 - g)*w + g * (w_c + i)
         
-        return tf.concat([u_next, udot_next], 1)
+        return tf.concat([u_next, udot_next, ctf], 1)
+
+    def loss_func(self, y_true, y_pred):
+        
+        y_true_x = y_true[:, :, :-1]
+        y_true_c = y_true[:, :, -1:]
+        y_pred_x = y_pred[:, :, :-1]
+        y_pred_c = y_pred[:, :, -1:]
+
+        mse = tf.keras.losses.MSE(y_true_x, y_pred_x)
+        cent = tf.keras.losses.binary_crossentropy(y_true_c, y_pred_c)
+        mse = tf.reduce_mean(tf.reduce_sum(mse, 1))
+        cent = tf.reduce_mean(tf.reduce_sum(cent, 1))
+
+        #p_c = tfp.distributions.Bernoulli(probs=y_pred_c[:, :, 0])
+        #log_pc = p_c.log_prob(y_true_c[:, :, 0])
+        #log_pc = tf.reduce_sum(tf.reduce_sum(log_pc, 1))
+        
+        #cinds = y_true_c.numpy() == 1.
+        #print(y_pred_c.numpy()[cinds])
+
+        #print(y_true_c)
+        #print(log_pc)
+
+        #input("...")
+
+        return mse + cent
 
 
 class CDLNetwork_Simple(CDLNetwork):
     
     def __init__(self, step_size, horizon, name, dim_state=10, dim_h=500, activation='relu', learn_inertia=False,
-                 learn_friction=False, e=1., **kwargs):
-        super().__init__(step_size, horizon, name, dim_state, dim_h, activation, learn_inertia, learn_friction)
+                 learn_friction=False, e=1., pos_only=True, **kwargs):
+        super().__init__(step_size, horizon, name, dim_state, dim_h, activation, learn_inertia, learn_friction, pos_only=pos_only)
         
         self.contact = tfk.Sequential([
             tfk.layers.Dense(dim_h, activation='relu'),

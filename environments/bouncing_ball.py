@@ -48,6 +48,7 @@ class BouncingBall(Environment):
         self.mass = mass
         self.g = g
 
+
     def plot(self):
         """Plot generated data"""
         plt.plot(self.X[:, 0])
@@ -88,13 +89,24 @@ class BouncingBall(Environment):
         space.add(static_lines)
 
         trajectory = []
+        prev_velocity = ball.body.velocity[1]
         for _ in range(self.steps + 1):
-            trajectory.append((ball.body.position[1], ball.body.velocity[1]))
+            current_velocity = ball.body.velocity[1]
+            delta_vel = current_velocity - prev_velocity
+            prev_velocity = current_velocity
+            if delta_vel > self.e * np.abs(prev_velocity):
+                contact = 1.
+            else:
+                contact = 0.
+            trajectory.append((ball.body.position[1], current_velocity, contact))
             space.step(self.dt)
+        
         self.trajectory = np.array(trajectory)
 
-        X, y = self.prepare_output()
+        X, y, c = self.prepare_output()
+
         self.X = X
         self.y = y
+        self.c = c
 
-        return trajectory, X, y
+        return trajectory, X, y, c
