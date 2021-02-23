@@ -88,13 +88,19 @@ class BouncingBall(Environment):
         space.add(static_lines)
 
         trajectory = []
+        prev_velocity = ball.body.velocity[1]
         for _ in range(self.steps + 1):
-            trajectory.append((ball.body.position[1], ball.body.velocity[1]))
+            current_velocity = ball.body.velocity[1]
+            delta_v = current_velocity - prev_velocity
+            prev_velocity = current_velocity
+            
+            # Determine if a contact happened
+            contact = 1. if delta_v > self.e * np.abs(prev_velocity) else 0.
+            
+            trajectory.append((ball.body.position[1], current_velocity, contact))
             space.step(self.dt)
+        
         self.trajectory = np.array(trajectory)
+        self.prepare_output()
 
-        X, y = self.prepare_output()
-        self.X = X
-        self.y = y
-
-        return trajectory, X, y
+        return self.trajectory, self.X, self.y, self.c

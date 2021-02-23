@@ -111,12 +111,16 @@ class Pendulum(Environment):
             return qqd
 
         data = run(1, self.steps, self.dt, (y0,))
-        self.trajectory = data[0]
+        self.trajectory = np.hstack([
+            data[0],
+            np.zeros([data[0].shape[0], 1])
+        ])
         self.prepare_output()
         
         return self.X, self.y, (t, self.trajectory)
 
     def pendulum_friction_small_angle(self, state0):
+        """Pendulum small angle approximation (deprecated)"""
         q0, qd0 = state0[0], state0[1]
         T = self.steps * self.dt
         t = np.linspace(0, T, self.steps)
@@ -132,17 +136,7 @@ class Pendulum(Environment):
         qd = ((c2*omega - c1*k/2) * np.cos(omega*t) - (c1*omega + c2*k/2) * np.sin(omega*t)) * np.exp(-k/2 * t)
 
         self.trajectory = np.array([q, qd]).T
-
-        # nt = np.array((q + q*sigma * np.random.randn(self.steps), qd + qd*sigma * np.random.randn(self.steps)))
-        # X = []
-        # y = []
-        # for i in range(nt.T.shape[0] - horizon - 1):
-        #     X.append(nt.T[i:i + 1, :].flatten())
-        #     y.append(nt.T[i + 1:i + horizon + 1, :].flatten())
         self.prepare_output()
-        
-        # self.X = np.array(X)
-        # self.y = np.array(y)
         
         return self.X, self.y, (t, self.trajectory)
     
