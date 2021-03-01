@@ -1,5 +1,6 @@
 # CD-Lagrange Network
 
+This is code for the paper https://arxiv.org/abs/2102.11206
 
 ## Structure
 
@@ -20,8 +21,8 @@ Install the python requirements with
 pip install -r requirements.txt
 ```
 
-### Simulate experiments from the thesis
-To rerun the experiments in the thesis, one can just execute the `main.py` file, which will sequentially execute all experiments.
+### Simulate experiments
+To rerun the experiments from the paper, one can execute the `main.py` file, which will sequentially execute the pendulum, bouncing ball and newton's cradle experiment using the idealised touch feedback data regime.
 It is possible to access the models trained in every experiment by using dot-access:
 ```python
 from experiments import pendulum, newton_cradle
