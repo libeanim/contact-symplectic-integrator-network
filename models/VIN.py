@@ -21,8 +21,8 @@ from models.base import BaseNetwork
 class VIN(BaseNetwork):
     """ Variational Integrator Network """
 
-    def __init__(self, step_size, horizon, name, dim_state=10, dim_h=500, activation='relu', learn_inertia=False, **kwargs):
-        super().__init__(step_size, horizon, name, dim_state)
+    def __init__(self, step_size, horizon, name, dim_state=10, dim_h=500, activation='relu', learn_inertia=False, pos_only=True, **kwargs):
+        super().__init__(step_size, horizon, name, dim_state, pos_only)
 
         self.dim_Q = self.dim_state // 2
 
@@ -55,15 +55,25 @@ class VIN(BaseNetwork):
 
         return g.gradient(U, q)
 
-    def step(self, x, step_size, t):
+        
+    def loss_func(self, y_true, y_pred):
+        y_true_x = y_true[:, :, :-1]
+        y_pred_x = y_pred[:, :, :-1]
+
+        mse = tf.keras.losses.MSE(y_true_x, y_pred_x)
+        mse = tf.reduce_mean(tf.reduce_sum(mse, 1))
+        return mse
+
+    def step(self, x, c, step_size, t):
         raise NotImplementedError()
 
 
 class VIN_SV(VIN):
     """ Störmer-Verlet VIN """
 
-    def step(self, x, step_size, t):
+    def step(self, x, c, step_size, t):
 
+        c_next = tf.zeros_like(x[:, :1])
         q = x[:, :self.dim_Q]
         q_prev = x[:, self.dim_Q:]
         dUdq = self.grad_potential(q)
@@ -71,7 +81,7 @@ class VIN_SV(VIN):
         qddot = tf.einsum('jk,ik->ij', self.M_inv, dUdq)
         q_next = 2 * q - q_prev - (step_size**2) * qddot
 
-        return tf.concat([q_next, q], 1)
+        return tf.concat([q_next, q, c_next], 1)
 
     def forward(self, q0, step_size, horizon):
 
@@ -90,8 +100,9 @@ class VIN_SV(VIN):
 class VIN_VV(VIN):
     """ Velocity-Verlet VIN """
 
-    def step(self, x, step_size, t):
+    def step(self, x, c, step_size, t):
 
+        c_next = tf.zeros_like(x[:, :1])
         q = x[:, :self.dim_Q]
         qdot = x[:, self.dim_Q:]
         dUdq = self.grad_potential(q)
@@ -106,4 +117,4 @@ class VIN_VV(VIN):
 
         qdot_next = qdot - 0.5 * step_size * qddot_mid
 
-        return tf.concat([q_next, qdot_next], 1)
+        return tf.concat([q_next, qdot_next, c_next], 1)
