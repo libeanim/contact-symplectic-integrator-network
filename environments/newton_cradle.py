@@ -186,37 +186,38 @@ class NewtonCradle(Environment):
 
         return trajectory, X, y
 
-    def generate_cdl(self, state0=np.array([ 0., 0., 2, 0.]), enforce_constraints=False): 
+    def generate_cdl(self, state0=np.array([ 0., 0., 2, 0.]), enforce_constraints=True): 
         """Generate data using the CD-Lagrange integrator backend"""       
         dim_Q = 2
         self.joints = [(0,100), (0,100)]
-        trajectory = [state0]
+        trajectory = [np.hstack([state0, 0])]
         M_inv = np.eye(dim_Q)
         for _ in range(self.steps):
             u = trajectory[-1][:dim_Q]
-            udot = trajectory[-1][dim_Q:]
+            udot = trajectory[-1][dim_Q:-1]
 
             u_next = u + self.dt * udot
             dUdu = self.g * np.sin(u_next)
             w = M_inv @ (self.dt * dUdu)
-            
-            
+
+
             # Contact forces
             i=0
-            if u[0] - u[1] <= 0. and not udot[0] > 0 and not udot[1] < 0:
+            contact = u[0] - u[1] <= 0. and not udot[0] > 0 and not udot[1] < 0
+            if contact:
                 v = -self.e @ (self.L * udot)
                 r = (v - self.L * (udot + w))
                 i = M_inv @ (self.L * r)
                 if enforce_constraints:
                     u_next = np.array([0, 0])
-            
+
             udot_next = udot + w + i
-            trajectory.append(np.array([u_next, udot_next]).flatten())
-            
+            trajectory.append(np.hstack([np.array([u_next, udot_next]).flatten(), 1. if contact else 0.]))
+
 
         self.trajectory = np.array(trajectory)
         self.prepare_output()
-        
+
         return self.X, self.y, self.trajectory
 
     def plot(self, savefig=False):

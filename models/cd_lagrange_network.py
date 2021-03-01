@@ -11,6 +11,7 @@ This is the implementation of the CD-Lagrange network based on the work of
   “Variational Integrator Networks for Physically Meaning-ful Embeddings”
 """
 
+import numpy as np
 import tensorflow.keras as tfk
 import tensorflow as tf
 import tensorflow_probability as tfp
@@ -40,14 +41,17 @@ class CDLNetwork(BaseNetwork):
     """
 
   
-    def __init__(self, step_size, horizon, name, dim_state=10, dim_h=500, activation='tanh', learn_inertia=False, learn_friction=False, **kwargs):
-        super().__init__(step_size, horizon, name, dim_state)
+    def __init__(self, step_size, horizon, name, dim_state=10, dim_h=500, activation='tanh',
+                learn_inertia=False, learn_friction=False, pos_only=True, **kwargs):
+        super().__init__(step_size, horizon, name, dim_state, pos_only)
 
         self.dim_Q = self.dim_state // 2
         
         self.potential = tfk.Sequential([
-            tfk.layers.Dense(dim_h, activation=activation, input_shape=(dim_state//2,)),
-            tfk.layers.Dense(1, use_bias=False)
+            tfk.layers.Dense(dim_h, activation=activation, input_shape=(dim_state//2,),
+                             kernel_regularizer=tf.keras.regularizers.l2(0.05)),
+            tfk.layers.Dense(1, use_bias=False,
+                             kernel_regularizer=tf.keras.regularizers.l2(0.05))
         ])
            
         self.contact = tfk.Sequential([
@@ -101,41 +105,65 @@ class CDLNetwork(BaseNetwork):
 
         return g.gradient(U, q)
 
-    def step(self, x, step_size, t):
-        """Calculate next step using the CD-Lagrange integrator."""
-        u = x[:, :self.dim_Q]
-        udot = x[:, self.dim_Q:]
+    def step(self, x, c, step_size, t):
+        """Calculate next step using the CD-Lagrange integrator.""" 
+        u = x[:, :self.dim_Q] 
+        udot = x[:, self.dim_Q:] 
 
-        u_next = u + step_size * udot
-        dUdu = self.grad_potential(u_next)
-        damping = tf.einsum('jk,ik->ij', self.B, udot)
-        w = tf.einsum('jk,ik->ij', self.M_inv,  step_size * (dUdu - damping))
+        u_next = u + step_size * udot 
+        dUdu = self.grad_potential(u_next) 
+        damping = tf.einsum('jk,ik->ij', self.B, udot) 
+        w = tf.einsum('jk,ik->ij', self.M_inv,  step_size * (dUdu - damping)) 
         
         
-        # Contact forces
-        Q = tf.concat([u_next, udot], 1)
-        v = -tf.einsum('jk,ik->ij', self.e, self.L * udot)
-        r = v - self.L * (udot + w)
-        ctf = self.contact(Q)
-        r = ctf * r   
-        i = tf.einsum('jk,ik->ij', self.M_inv, self.L * r)
+        # Contact forces 
+        Q = tf.concat([u_next, udot], 1)  
 
-        # Velocity next step
-        udot_next = udot + w + i
+        v = tf.einsum('jk,ik->ij', self.e, self.L * udot) 
+        r = v - self.L * (udot + w) 
+        ctf = self.contact(Q) 
+
+        if c is None: 
+            c = np.float32(ctf.numpy() > 0.5) 
+            c = tf.constant(c) 
+
+
+        #closest point projection
+        u_next = tf.where(tf.greater(ctf, tf.constant([0.5])), 0., u_next)
+        r = c * r
+
+        i = tf.einsum('jk,ik->ij', self.M_inv, self.L * r) 
+
+        # Velocity next step 
+        udot_next = udot + w + i 
         
-        return tf.concat([u_next, udot_next], 1)
+        return tf.concat([u_next, udot_next, ctf], 1)
+
+    def loss_func(self, y_true, y_pred):
+
+        y_true_x = y_true[:, :, :-1]
+        y_true_c = y_true[:, :, -1:]
+        y_pred_x = y_pred[:, :, :-1]
+        y_pred_c = y_pred[:, :, -1:]
+
+        mse = tf.keras.losses.MSE(y_true_x, y_pred_x)
+        cent = tf.keras.losses.binary_crossentropy(y_true_c, y_pred_c)
+        mse = tf.reduce_mean(tf.reduce_sum(mse, 1))
+        cent = tf.reduce_mean(tf.reduce_sum(cent, 1))
+
+        return cent + mse
 
 
 class CDLNetwork_Simple(CDLNetwork):
     
     def __init__(self, step_size, horizon, name, dim_state=10, dim_h=500, activation='relu', learn_inertia=False,
-                 learn_friction=False, e=1., **kwargs):
-        super().__init__(step_size, horizon, name, dim_state, dim_h, activation, learn_inertia, learn_friction)
+                 learn_friction=False, e=1., pos_only=True, **kwargs):
+        super().__init__(step_size, horizon, name, dim_state, dim_h, activation, learn_inertia, learn_friction, pos_only)
         
-        self.contact = tfk.Sequential([
-            tfk.layers.Dense(dim_h, activation='relu'),
-            tfk.layers.Dense(dim_state//2, activation='sigmoid')
-        ])
+        # self.contact = tfk.Sequential([
+        #     tfk.layers.Dense(dim_h, activation='relu'),
+        #     tfk.layers.Dense(dim_state//2, activation='sigmoid')
+        # ])
         
         self.L = tf.constant([[1.]])
         self.e = e * tf.eye(self.dim_Q)
