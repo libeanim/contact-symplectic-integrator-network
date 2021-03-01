@@ -9,16 +9,17 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 from environments import BouncingBall
-from models import CDLNetwork_Simple, ResNet, CDLNetwork_NoContact
+from models import CDLNetwork_Simple, ResNet, ResNetContact, CDLNetwork_NoContact
 from utils import TRAIN, PREDICT, RMSE
 
 env = None
 cdl_model = None
 resnet = None
+resnet_c = None
 
 
 def run():
-    global env, cdl_model, resnet, cdl_data, resnet_data
+    global env, cdl_model, resnet, resnet_c, cdl_data, resnet_data, resnet_c_data
 
     env = BouncingBall(steps=500, dt=0.02, epochs=3000, e=1.)
     env.generate()
@@ -28,13 +29,15 @@ def run():
 
     # RESNET
     resnet = TRAIN(env, ResNet, name='ResNet')
+    resnet_c = TRAIN(env, ResNetContact, name='ResNetContact')
 
     cdl_data = PREDICT(env, cdl_model)
     resnet_data = PREDICT(env, resnet)
+    resnet_c_data = PREDICT(env, resnet_c) 
 
 
 def run_zenos_paradox():
-    global env, cdl_model, resnet, cdl_data, resnet_data
+    global env, cdl_model, resnet, resnet_c, cdl_data, resnet_data, resnet_c_data
 
     env = BouncingBall(steps=500, dt=0.02, epochs=3000, e=0.7)
     env.generate()
@@ -44,9 +47,11 @@ def run_zenos_paradox():
 
     # RESNET
     resnet = TRAIN(env, ResNet, name='ResNet')
+    resnet_c = TRAIN(env, ResNetContact, name='ResNetContact')
 
     cdl_data = PREDICT(env, cdl_model)
     resnet_data = PREDICT(env, resnet)
+    resnet_c_data = PREDICT(env, resnet_c) 
 
 def run_contact_disabled():
     global env, cdl_model, resnet, cdl_data, resnet_data

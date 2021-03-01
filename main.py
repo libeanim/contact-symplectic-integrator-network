@@ -15,13 +15,6 @@ pendulum.plot_trajectory(savefig=True)
 pendulum.plot_energy(savefig=True)
 pendulum.plot_potential(savefig=True)
 
-# %% Pendulum friction
-pendulum_friction.run(train_vin=True)
-
-pendulum_friction.plot_trajectory(savefig=True)
-pendulum_friction.plot_energy(savefig=True)
-pendulum_friction.plot_potential(savefig=True)
-
 # %% Bouncing Ball
 bouncing_ball.run()
 
