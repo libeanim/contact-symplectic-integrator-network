@@ -1,5 +1,5 @@
 import numpy as np
-
+import tensorflow as tf
 
 class Environment:
     """
@@ -21,8 +21,9 @@ class Environment:
         self.DATA = DATA
         self.CONTACT = CONTACT
         self.trajectory = None
+        tf.random.set_seed(SEED)
 
-    def get_filename(self, name, suffix='pdf', folder='images'):
+    def get_filename(self, name, suffix='png', folder='images'):
         if folder is None:
             folder = '.'
         return '{}/{}-{}-{}-{}-{}.{}'.format(folder, self.SEED, self.DATA, self.CONTACT, self.epochs, name, suffix)
