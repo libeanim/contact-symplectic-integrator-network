@@ -18,7 +18,8 @@ This project has four different modules
 
 Install the python requirements with
 ```
-pip install -r requirements.txt
+conda env create -f environment.yml
+conda activate cdl-net
 ```
 
 ### Simulate experiments
