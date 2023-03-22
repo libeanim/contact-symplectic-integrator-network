@@ -21,7 +21,7 @@ resnet_c = None
 def run():
     global env, cdl_model, resnet, resnet_c, cdl_data, resnet_data, resnet_c_data
 
-    env = BouncingBall(steps=500, dt=0.02, epochs=3000, e=1.)
+    env = BouncingBall(steps=500, dt=0.02, epochs=3000, e=1., SIGMA=0.2)
     env.generate()
 
     # CD-LAGRANGE
@@ -73,8 +73,12 @@ def plot_trajectory(savefig=False):
     plt.figure(figsize=(12,8))
 
     plt.title('Phase Space'); plt.xlabel('q'); plt.ylabel('p')
-    plt.plot(cdl_data[:, 0], cdl_data[:, 1], 'x--', label='CD-Lagrange, RMSE: {:.3f}'.format(RMSE(env, cdl_data)))
-    plt.plot(resnet_data[:, 0], resnet_data[:, 1], 'x--', label='ResNet, RMSE: {:.3f}'.format(RMSE(env, resnet_data)))
+    plt.plot(cdl_data[:, 0], cdl_data[:, 1], 'x--', alpha=0.7, linewidth=3.,
+             label='CD-Lagrange, RMSE: {:.3f}'.format(RMSE(env, cdl_data)))
+    plt.plot(resnet_data[:, 0], resnet_data[:, 1], 'x--', alpha=0.7, linewidth=3.,
+             label='ResNet, RMSE: {:.3f}'.format(RMSE(env, resnet_data)))
+    plt.plot(resnet_c_data[:, 0], resnet_c_data[:, 1], alpha=0.7, linewidth=3.,
+             label='ResNetContact, RMSE: {:.3f}'.format(RMSE(env, resnet_c_data))) 
     plt.plot(env.trajectory[:, 0], env.trajectory[:, 1], 'xk', label='Ground truth')
     plt.legend()
     if savefig:
@@ -87,15 +91,19 @@ def plot_potential(savefig=False):
     plt.figure(figsize=(14, 5))
     plt.subplot(1, 2, 1)
     plt.title('Gradient of Potential')
-    plt.plot(t, cdl_model.grad_potential(tf.reshape(cdl_data[:, 0], (cdl_data.shape[0], 1,1)))[:, 0,0], label='CD-Lagrange')
-    plt.plot(t, -9.81 * np.ones_like(t), '--k', label='Ground truth')
+    plt.plot(t, -9.81 * np.ones_like(t), '--k', label='Ground truth', linewidth=3.)
+    plt.plot(t, cdl_model.grad_potential(tf.reshape(cdl_data[:, 0], (cdl_data.shape[0], 1,1)))[:, 0,0],
+             'C0', label='CD-Lagrange', linewidth=3.)
     plt.legend()
     plt.xlabel('Time in s')
     plt.subplot(1, 2, 2)
     plt.title('Contact function')
-    plt.plot(t[1:], cdl_model.contact(tf.concat([cdl_data[1:, 0:1], cdl_data[:-1, 1:2]], 1)), label='CD-Lagrange')
-
-    plt.plot(t[:-1], (env.trajectory[:, 0] <= 0.01), 'kx', label='Ground truth')
+    plt.plot(t[:-1], (env.trajectory[:, -1]), 'kx', label='Ground truth', markersize=8.)
+    plt.plot(t[1:], resnet_c.contact(tf.concat([resnet_c_data[1:, 0:1], resnet_c_data[:-1, 1:2]], 1)),
+             'C2', label='ResnetContact', linewidth=3.)
+    plt.plot(t[1:], cdl_model.contact(tf.concat([cdl_data[1:, 0:1], cdl_data[:-1, 1:2]], 1)),
+             'C0', label='CD-Lagrange', linewidth=3.)
+    plt.yticks([0, 1])
     plt.legend()
     plt.xlabel('Time in s')
     if savefig:

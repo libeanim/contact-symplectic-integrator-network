@@ -21,7 +21,7 @@ _train_vin = False
 def run(train_vin=False):
     global env, cdl_model, resnet, vin_model, cdl_data, resnet_data, vin_data, _train_vin
     _train_vin = train_vin
-    env = Pendulum(steps=400, dt=0.01, epochs=3000, friction=0., length=1, SIGMA=0.1)
+    env = Pendulum(steps=200, dt=0.02, epochs=3000, friction=0., length=1, SIGMA=0.2)
     env.generate()
 
     # CD-LAGRANGE
@@ -43,12 +43,12 @@ def plot_trajectory(savefig=False):
     ## Phase space
     plt.figure(figsize=(12,8))
     plt.title('Phase Space'); plt.xlabel('q'); plt.ylabel('p')
-    plt.plot(env.trajectory[:, 0], env.trajectory[:, 1], '--k', label='Ground truth')
+    plt.plot(env.trajectory[:, 0], env.trajectory[:, 1], '--k', label='Ground truth', linewidth=3.)
     plt.plot(env.X[:, 0], env.X[:, 1], 'xk', label='Training data', alpha=0.3)
-    plt.plot(cdl_data[:, 0], cdl_data[:, 1], '-',  label='CD-Lagrange, RMSE: {:.3f}'.format(RMSE(env, cdl_data)))
-    plt.plot(resnet_data[:, 0], resnet_data[:, 1], '-', label='ResNet, RMSE: {:.3f}'.format(RMSE(env, resnet_data)))
+    plt.plot(cdl_data[:, 0], cdl_data[:, 1], '-',  label='CD-Lagrange, RMSE: {:.3f}'.format(RMSE(env, cdl_data)), alpha=0.7, linewidth=3.)
+    plt.plot(resnet_data[:, 0], resnet_data[:, 1], '-', label='ResNet, RMSE: {:.3f}'.format(RMSE(env, resnet_data)), alpha=0.7, linewidth=3.)
     if _train_vin:
-        plt.plot(vin_data[:, 0], vin_data[:, 1], '-', label='VIN VV, RMSE: {:.3f}'.format(RMSE(env, vin_data)))
+        plt.plot(vin_data[:, 0], vin_data[:, 1], '-', label='VIN VV, RMSE: {:.3f}'.format(RMSE(env, vin_data)), alpha=0.7, linewidth=3.)
     plt.legend()
     if savefig:
         plt.savefig(env.get_filename('trajectory'))
@@ -67,19 +67,19 @@ def plot_energy(savefig=False):
     plt.figure(figsize=(12,6))
     plt.subplot(1,2,1)
     plt.title('Energy'); plt.xlabel('t')
-    plt.plot(e_exact, '--k', label='Ground truth')
-    plt.plot(e_cdl, '-', label='CD-Lagrange')
-    plt.plot(e_resnet, '-', label='ResNet')
+    plt.plot(e_exact, '--k', label='Ground truth', linewidth=3.)
+    plt.plot(e_cdl, '-', label='CD-Lagrange', linewidth=3.)
+    plt.plot(e_resnet, '-', label='ResNet', linewidth=3.)
     if _train_vin:
-        plt.plot(e_vv, '-', label='VIN VV')
+        plt.plot(e_vv, '-', label='VIN VV', linewidth=3.)
     plt.legend()
     plt.subplot(1,2,2)
     plt.title('Energy Error'); plt.xlabel('t')
-    plt.plot(e_exact - e_exact, '--k', label='Ground truth')
-    plt.plot(e_cdl - e_exact, label='CD-Lagrange')
-    plt.plot(e_resnet - e_exact, label='ResNet')
+    plt.plot(e_exact - e_exact, '--k', label='Ground truth', linewidth=3.)
+    plt.plot(e_cdl - e_exact, label='CD-Lagrange', linewidth=3.)
+    plt.plot(e_resnet - e_exact, label='ResNet', linewidth=3.)
     if _train_vin:
-        plt.plot(e_vv - e_exact, label='VIN VV')
+        plt.plot(e_vv - e_exact, label='VIN VV', linewidth=3.)
     if savefig:
         plt.savefig(env.get_filename('energy'))
     plt.show()
@@ -101,7 +101,7 @@ def plot_potential(savefig=False):
     plt.subplot(1, 2, 2)
     plt.title('Contact function')
     plt.plot(t, np.zeros_like(t), '--k', label='Ground truth')
-    plt.plot(t[1:], cdl_model.contact(tf.concat([cdl_data[1:, 0:1], cdl_data[:-1, 1:2]], 1))[:, 0], label='CD-Lagrange')
+    plt.plot(t[1:], cdl_model.contact(tf.concat([cdl_data[1:, 0:1], cdl_data[:-1, 1:2]], 1))[:, 0], label='CD-Lagrange', linewidth=4.0)
     plt.ylim((-0.1, 1))
     plt.xlabel('Time in s')
     plt.legend()
