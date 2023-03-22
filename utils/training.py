@@ -1,7 +1,8 @@
 import numpy as np
 import tensorflow as tf
 
-def TRAIN(env, model, name, learning_rate=1e-2, loss='mse', pos_only=False, initialise=True, learn_friction=False):
+def TRAIN(env, model, name, learning_rate=1e-2, loss='mse', pos_only=False, initialise=True,
+          learn_friction=False, verbose=2):
     """
     Train a model given an environment and the learning parameters.
 
@@ -32,12 +33,12 @@ def TRAIN(env, model, name, learning_rate=1e-2, loss='mse', pos_only=False, init
     c = tf.convert_to_tensor(env.c.reshape(env.c.shape[0], env.horizon, 1), np.float32)
 
     if pos_only:
-        y = tf.convert_to_tensor(env.y.reshape(env.y.shape[0], env.horizon, env.X.shape[1])[:, :, :env.X.shape[1]//2], np.float32)
+        y = tf.convert_to_tensor(env.y.reshape(env.y.shape[0], env.horizon,
+                                               env.X.shape[1])[:, :, :env.X.shape[1]//2], np.float32)
     else:
         y = tf.convert_to_tensor(env.y.reshape(env.y.shape[0], env.horizon, env.X.shape[1]), np.float32)
     y = tf.concat([y, c], 2)
-    
-    m.fit([X, c], y, epochs=env.epochs, shuffle=True, callbacks=[log])
+    m.fit([X, c], y, epochs=env.epochs, shuffle=True, callbacks=[log], verbose=verbose)
 
     m.loss_data = np.array(loss)
     return m
