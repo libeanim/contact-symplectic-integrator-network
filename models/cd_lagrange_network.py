@@ -42,18 +42,18 @@ class CDLNetwork(BaseNetwork):
 
   
     def __init__(self, step_size, horizon, name, dim_state=10, dim_h=500, activation='tanh',
-                learn_inertia=False, learn_friction=False, pos_only=True, **kwargs):
+                learn_inertia=False, learn_friction=False, pos_only=True, regularisation=5e-6, **kwargs):
         super().__init__(step_size, horizon, name, dim_state, pos_only)
 
         self.dim_Q = self.dim_state // 2
         
         self.potential = tfk.Sequential([
             tfk.layers.Dense(dim_h, activation=activation, input_shape=(dim_state//2,),
-                             kernel_regularizer=tf.keras.regularizers.l2(0.05)),
+                             kernel_regularizer=tf.keras.regularizers.l2(regularisation)),
             tfk.layers.Dense(1, use_bias=False,
-                             kernel_regularizer=tf.keras.regularizers.l2(0.05))
+                             kernel_regularizer=tf.keras.regularizers.l2(regularisation))
         ])
-           
+
         self.contact = tfk.Sequential([
             tfk.layers.Dense(100, activation='relu', input_shape=(dim_state,)),
             tfk.layers.Dense(100, activation='relu'),
@@ -74,7 +74,8 @@ class CDLNetwork(BaseNetwork):
         else:
             self.M_param = None
 
-        self.L = tf.constant([[1., -1.]])
+        # self.L = tf.constant([[1., -1.]])
+        self.L = tf.constant([[1.]])
         self.e = tf.constant([[0., 1.], [1., 0.]])
 
 
@@ -117,7 +118,7 @@ class CDLNetwork(BaseNetwork):
         
         
         # Contact forces 
-        Q = tf.concat([u_next, udot], 1)  
+        Q = tf.concat([u_next, udot], 1)
 
         v = tf.einsum('jk,ik->ij', self.e, self.L * udot) 
         r = v - self.L * (udot + w) 
@@ -135,7 +136,7 @@ class CDLNetwork(BaseNetwork):
         i = tf.einsum('jk,ik->ij', self.M_inv, self.L * r) 
 
         # Velocity next step 
-        udot_next = udot + w + i 
+        udot_next = udot + w + i
         
         return tf.concat([u_next, udot_next, ctf], 1)
 
@@ -157,8 +158,9 @@ class CDLNetwork(BaseNetwork):
 class CDLNetwork_Simple(CDLNetwork):
     
     def __init__(self, step_size, horizon, name, dim_state=10, dim_h=500, activation='relu', learn_inertia=False,
-                 learn_friction=False, e=1., pos_only=True, **kwargs):
-        super().__init__(step_size, horizon, name, dim_state, dim_h, activation, learn_inertia, learn_friction, pos_only)
+                 learn_friction=False, e=1., pos_only=True, regularisation=5e-3, **kwargs):
+        super().__init__(step_size, horizon, name, dim_state, dim_h, activation, learn_inertia, learn_friction,
+                         pos_only, regularisation)
         
         # self.contact = tfk.Sequential([
         #     tfk.layers.Dense(dim_h, activation='relu'),
@@ -167,6 +169,37 @@ class CDLNetwork_Simple(CDLNetwork):
         
         self.L = tf.constant([[1.]])
         self.e = e * tf.eye(self.dim_Q)
+
+    def step(self, x, c, step_size, t): 
+        """Calculate next step using the CD-Lagrange integrator.""" 
+        u = x[:, :self.dim_Q] 
+        udot = x[:, self.dim_Q:] 
+
+        u_next = u + step_size * udot 
+        dUdu = self.grad_potential(u_next) 
+        damping = tf.einsum('jk,ik->ij', self.B, udot) 
+        w = tf.einsum('jk,ik->ij', self.M_inv,  step_size * (dUdu - damping)) 
+        
+        
+        # Contact forces
+        Q = tf.concat([u_next, udot], 1)
+
+        v = -self.e * self.L * udot
+        r = v - self.L * (udot + w) 
+        ctf = self.contact(Q) 
+
+        if c is None: 
+            c = np.float32(ctf.numpy() > 0.5) 
+            c = tf.constant(c) 
+
+        r = c * r  
+
+        i = tf.einsum('jk,ik->ij', self.M_inv, self.L * r) 
+
+        # Velocity next step 
+        udot_next = udot + w + i 
+        
+        return tf.concat([u_next, udot_next, ctf], 1)
 
 class CDLNetwork_NoContact(CDLNetwork_Simple):
     
